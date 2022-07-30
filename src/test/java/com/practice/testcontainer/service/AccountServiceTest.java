@@ -2,74 +2,61 @@ package com.practice.testcontainer.service;
 
 import com.practice.testcontainer.domain.Account;
 import com.practice.testcontainer.repository.AccountRepository;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
+import org.mockito.Mock;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-@ActiveProfiles("test")
-@SpringBootTest
-@Transactional
-//@Testcontainers
-class AccountServiceTest {
+@DisplayName("AccountService Unit Test")
+public class AccountServiceTest {
 
-//    @Container
-//    public static MySQLContainer mysqlContainer =
-//            new MySQLContainer("mysql:8.0.28")
-//                    .withDatabaseName("foo");
-//
-//    static {
-//        mysqlContainer.start();
-//    }
-//
-//    @DynamicPropertySource
-//    static void mySqlProperties(DynamicPropertyRegistry registry) {
-//        registry.add("spring.datasource.url", mysqlContainer::getJdbcUrl);
-//        registry.add("spring.datasource.username", mysqlContainer::getUsername);
-//        registry.add("spring.datasource.password", mysqlContainer::getPassword);
-//    }
-
-    @Autowired
     AccountRepository accountRepository;
 
-//    @Test
-//    @DisplayName("test container 실행 확인")
-//    void isRunningTestContainer() throws Exception {
-//        assertTrue(mysqlContainer.isRunning());
-//    }
+    AccountService accountService;
 
-    @Test
-    @DisplayName("Account 저장")
-    void saveAccount() throws Exception {
-        //given
-        Account account = new Account("account1");
-
-        //when
-        Account savedAccount = accountRepository.save(account);
-
-        //then
-        assertThat(savedAccount.getId()).isEqualTo(account.getId());
+    @BeforeEach
+    void setUp() {
+        accountRepository = mock(AccountRepository.class);
+        accountService = new AccountService(accountRepository);
     }
 
     @Test
-    @DisplayName("Account 수정")
-    void updateAccount() throws Exception {
+    @DisplayName("이름이 주어질 경우 계정을 생성할 수 있다")
+    void testCreateAccount() throws Exception {
         //given
-        Account account = new Account("account1");
-        Account savedAccount = accountRepository.save(account);
+        String accountName = "account1";
 
         //when
-        savedAccount.update("account2");
-
-        Account updatedAccount = accountRepository.findById(account.getId()).get();
+        Account savedAccount = accountService.createAccount("account1");
 
         //then
-        assertThat(updatedAccount.getName()).isEqualTo("account2");
+        verify(accountRepository, times(1)).save(any());
     }
 
+    @Test
+    @DisplayName("수정될 이름과 아이디가 주어질 경우 계정을 수정할 수 있다")
+    void testUpdateAccount() throws Exception {
+        //given
+        String updatedName = "account2";
+        Account account = new Account("account1");
+
+        //when
+        when(accountRepository.findById(anyLong()))
+                .thenReturn(Optional.of(account));
+
+        Account updatedAccount = accountService.updateAccount(1L, updatedName);
+
+        //then
+        Assertions.assertEquals(updatedAccount.getName(), updatedName);
+    }
 }
