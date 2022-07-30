@@ -1,0 +1,1 @@
+DELETE FROM account WHERE account_id in (1,2,3);
